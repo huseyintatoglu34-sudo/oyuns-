@@ -1,0 +1,6 @@
+{
+  "name": "Parkur Ustası 2D",
+  "description": "Akıcı fizik motoru, duvar tırmanışı, kayma, zıplama ve çoklu bölümleri olan 2D parkur oyunu.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

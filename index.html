@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Parkur Ustası 2D</title>
+    <meta name="description" content="Akıcı fizik motoru, duvar tırmanışı, kayma, zıplama ve çoklu bölümleri olan 2D parkur oyunu." />
+    <meta property="og:title" content="Parkur Ustası 2D" />
+    <meta property="og:description" content="Akıcı fizik motoru, duvar tırmanışı, kayma, zıplama ve çoklu bölümleri olan 2D parkur oyunu." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <div id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Oyun İçi HUD -->
+        <div id="hud-overlay">
+          <div class="hud-group">
+            <div class="hud-card" id="hud-level-text">Bölüm 1: Temel Eğitim</div>
+            <div class="hud-card" id="hud-timer-text">0.00s</div>
+            <div class="hud-card" id="hud-stars-text">⭐ 0/3</div>
+            <div class="hud-card" id="hud-coins-text">🪙 0</div>
+            <div class="hud-card" id="hud-deaths-text">💀 0</div>
+          </div>
+
+          <div class="hud-group">
+            <div class="hud-card dash-indicator" title="Atılma (Dash) Soğuma Süresi">
+              <span class="hud-icon">⚡</span>
+              <div class="dash-meter-bg">
+                <div id="hud-dash-fill" class="dash-meter-fill"></div>
+              </div>
+            </div>
+            <button class="hud-btn" id="hud-music-btn" title="Müziği Aç / Kapat">🎵 Müzik</button>
+            <button class="hud-btn" id="hud-sound-btn" title="Ses Efektlerini Aç / Kapat">🔊 Ses</button>
+            <button class="hud-btn" id="hud-pause-btn" title="Oyunu Duraklat (ESC / P)">⏸ Duraklat</button>
+          </div>
+        </div>
+
+        <!-- Bildirim Balonu (Toast) -->
+        <div id="banner-toast">Bölüm 1: Temel Eğitim</div>
+
+        <!-- Dokunmatik Mobil Kontroller -->
+        <div id="touch-controls">
+          <div class="touch-dpad">
+            <button class="touch-btn" id="btn-left">◀</button>
+            <button class="touch-btn" id="btn-right">▶</button>
+          </div>
+          <div class="touch-actions">
+            <button class="touch-btn slide" id="btn-slide" title="Kayma / Çömelme">⬇</button>
+            <button class="touch-btn dash" id="btn-dash" title="Atılma">⚡</button>
+            <button class="touch-btn jump" id="btn-jump" title="Zıplama">▲</button>
+          </div>
+        </div>
+
+        <!-- Başlangıç Menüsü Modalı -->
+        <div id="modal-menu" class="modal-backdrop active">
+          <div class="modal-content">
+            <h1 class="modal-title">PARKUR USTASI 2D</h1>
+            <p class="modal-subtitle">Akıcı fizik motoru, duvar zıplamaları ve zorlu parkurlar seni bekliyor!</p>
+            <div class="btn-row" style="flex-direction: column;">
+              <button class="btn btn-primary" id="btn-start-game" style="font-size: 18px; padding: 14px 28px;">
+                ▶ Oyuna Başla
+              </button>
+              <button class="btn btn-secondary" id="btn-open-levels">
+                🗺️ Bölüm Seçimi (6 Bölüm)
+              </button>
+              <button class="btn btn-secondary" id="btn-open-controls">
+                🎮 Nasıl Oynanır & Kontroller
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Duraklatma Modalı -->
+        <div id="modal-pause" class="modal-backdrop">
+          <div class="modal-content">
+            <h2 class="modal-title">OYUN DURAKLATILDI</h2>
+            <p class="modal-subtitle">Nefes al ve devam et!</p>
+            <div class="btn-row" style="flex-direction: column;">
+              <button class="btn btn-primary" id="btn-resume">▶ Devam Et</button>
+              <button class="btn btn-secondary" id="btn-restart">🔄 Bölümü Yeniden Başlat (R)</button>
+              <button class="btn btn-secondary" id="btn-pause-levels">🗺️ Bölüm Seç</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bölüm Tamamlama (Zafer) Modalı -->
+        <div id="modal-victory" class="modal-backdrop">
+          <div class="modal-content">
+            <h2 class="modal-title" id="victory-title">Bölüm Tamamlandı!</h2>
+            <div class="victory-stars" id="victory-stars-box">
+              <span>★</span>
+              <span>★</span>
+              <span>★</span>
+            </div>
+
+            <div class="victory-stats">
+              <div class="stat-item">
+                <span class="stat-label">Süreniz</span>
+                <span class="stat-value" id="stat-time">0.00s</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Hedef Süre</span>
+                <span class="stat-value" id="stat-target">0.0s</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Düşüş</span>
+                <span class="stat-value" id="stat-deaths">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Jeton</span>
+                <span class="stat-value" id="stat-coins">0</span>
+              </div>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-primary" id="btn-next-level">Sonraki Bölüm ➡</button>
+              <button class="btn btn-secondary" id="btn-retry-level">Tekrar Dene</button>
+              <button class="btn btn-secondary" id="btn-victory-levels">Bölümler</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bölüm Seçim Modalı -->
+        <div id="modal-levels" class="modal-backdrop">
+          <div class="modal-content" style="max-width: 580px;">
+            <h2 class="modal-title">BÖLÜM SEÇİMİ</h2>
+            <p class="modal-subtitle">Tüm bölümlerde 3 yıldızı kap ve parkur şampiyonu ol!</p>
+            <div class="level-grid" id="level-grid"></div>
+            <div class="btn-row">
+              <button class="btn btn-secondary" id="btn-close-levels">Kapat</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kontroller ve Rehber Modalı -->
+        <div id="modal-controls" class="modal-backdrop">
+          <div class="modal-content">
+            <h2 class="modal-title">KONTROLLER VE HAREKETLER</h2>
+            <div class="controls-list">
+              <div class="control-item">
+                <span>Sağa / Sola Koşma:</span>
+                <div>
+                  <span class="kbd-badge">A / D</span> veya <span class="kbd-badge">◄ / ►</span>
+                </div>
+              </div>
+              <div class="control-item">
+                <span>Zıplama:</span>
+                <div>
+                  <span class="kbd-badge">W</span>, <span class="kbd-badge">▲</span> veya <span class="kbd-badge">Boşluk</span>
+                </div>
+              </div>
+              <div class="control-item">
+                <span>Duvar Tırmanışı / Zıplaması:</span>
+                <div>
+                  <span class="kbd-badge">Duvara yaslan + Zıpla</span>
+                </div>
+              </div>
+              <div class="control-item">
+                <span>Hava Atılımı (Dash):</span>
+                <div>
+                  <span class="kbd-badge">Shift</span> veya <span class="kbd-badge">K</span>
+                </div>
+              </div>
+              <div class="control-item">
+                <span>Kayma / Çömelme (Engellerin altından):</span>
+                <div>
+                  <span class="kbd-badge">S</span> veya <span class="kbd-badge">▼</span>
+                </div>
+              </div>
+              <div class="control-item">
+                <span>Hızlı Yeniden Başlatma:</span>
+                <span class="kbd-badge">R</span>
+              </div>
+              <div class="control-item">
+                <span>Duraklatma:</span>
+                <span class="kbd-badge">ESC / P</span>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="btn-close-controls">Anladım, Oyna!</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tüm Oyun Bitirme (Tebrikler) Modalı -->
+        <div id="modal-gameclear" class="modal-backdrop">
+          <div class="modal-content">
+            <div style="font-size: 56px; margin-bottom: 8px;">🏆</div>
+            <h2 class="modal-title">EFSANE PARKUR USTASI!</h2>
+            <p class="modal-subtitle">Tüm 6 bölümü başarıyla tamamladın! Reflekslerin ve hızın olağanüstüydü.</p>
+            <div class="btn-row">
+              <button class="btn btn-accent" id="btn-clear-menu">Ana Menüye Dön</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Doğrudan derleme gerektirmeyen JavaScript dosyası -->
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
